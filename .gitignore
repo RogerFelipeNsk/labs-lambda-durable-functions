@@ -1,0 +1,16 @@
+# Clone do Floci feito para estudo. Tem .git proprio: se entrar no commit, o
+# git grava so uma referencia de submodulo e quem clonar este repo recebe um
+# diretorio vazio. Quem quiser o Floci pega na origem:
+#   git clone https://github.com/floci-io/floci.git
+floci/
+
+# Da pasta docs, so o relatorio de custos vai para o repositorio. O resto e
+# material de trabalho: o plano do Floci, o prompt original e o rascunho do
+# post. Note o `docs/*` em vez de `docs/`: o git nao consegue reincluir um
+# arquivo cujo diretorio pai foi excluido, entao precisamos excluir o conteudo
+# e nao a pasta.
+docs/*
+!docs/reports/
+
+.DS_Store
+node_modules/

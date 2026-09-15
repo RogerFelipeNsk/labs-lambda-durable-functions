@@ -1,0 +1,20 @@
+# Copie para terraform.tfvars e ajuste o que quiser.
+
+perfil_aws   = "meu-perfil"   # nome do perfil no seu ~/.aws/config
+regiao       = "us-east-2"
+nome_projeto = "lab-conciliacao"
+
+# nodejs22.x ou nodejs24.x
+runtime_lambda = "nodejs22.x"
+
+# Prazo do boleto. Baixe para 1 hora se quiser ver o vencimento acontecer
+# em vez de esperar tres dias.
+timeout_pagamento_horas = 72
+
+# Pausa entre as etapas, para dar tempo de acompanhar a timeline. Como usa
+# ctx.wait (suspensao real), subir este valor nao aumenta o custo de compute.
+# 0 = sem pausa.
+ritmo_demo_segundos = 6
+
+# Libere a origem do seu Vite se nao for a porta padrao.
+origens_cors = ["http://localhost:5173", "http://127.0.0.1:5173"]

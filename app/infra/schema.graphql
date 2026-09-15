@@ -1,0 +1,123 @@
+# Schema do canal de tempo real.
+#
+# Duas modalidades de autenticacao convivem aqui:
+#   API_KEY  o navegador, que so pode LER e ASSINAR
+#   AWS_IAM  as Lambdas, as unicas que podem PUBLICAR
+#
+# Por isso os tipos carregam as duas diretivas (@aws_api_key @aws_iam): um tipo
+# devolvido por uma mutation IAM precisa ser legivel pelo assinante API_KEY,
+# senao o AppSync derruba o evento na entrega.
+#
+# As mutations publish* usam um data source NONE (resolver local): elas NAO
+# escrevem nada. Quem persiste e o backend, direto no DynamoDB. A mutation
+# existe so para disparar a subscription.
+
+type Boleto @aws_api_key @aws_iam {
+  id: ID!
+  sacado: String!
+  descricao: String
+  valorCentavos: Int!
+  status: String!
+  stage: String
+  nossoNumero: String
+  linhaDigitavel: String
+  createdAt: String!
+  updatedAt: String
+  executionArn: String
+  callbackId: String
+  attempt: Int
+  chaos: String
+  chaosRestante: Int
+  pagoEm: String
+  baixadoEm: String
+  comprovanteBaixa: String
+  extratoId: String
+  conciliacaoId: String
+  valorLiquidoCentavos: Int
+  tarifaCentavos: Int
+  divergenciaCentavos: Int
+  erro: String
+}
+
+type TimelineEvent @aws_api_key @aws_iam {
+  boletoId: ID!
+  seq: Int!
+  at: String!
+  stage: String!
+  level: String!
+  message: String!
+  attempt: Int
+  durationMs: Int
+  data: AWSJSON
+}
+
+type BoletoPage @aws_api_key @aws_iam {
+  items: [Boleto!]!
+  nextToken: String
+}
+
+type EventPage @aws_api_key @aws_iam {
+  items: [TimelineEvent!]!
+  nextToken: String
+}
+
+input BoletoInput {
+  id: ID!
+  sacado: String!
+  descricao: String
+  valorCentavos: Int!
+  status: String!
+  stage: String
+  nossoNumero: String
+  linhaDigitavel: String
+  createdAt: String!
+  updatedAt: String
+  executionArn: String
+  callbackId: String
+  attempt: Int
+  chaos: String
+  chaosRestante: Int
+  pagoEm: String
+  baixadoEm: String
+  comprovanteBaixa: String
+  extratoId: String
+  conciliacaoId: String
+  valorLiquidoCentavos: Int
+  tarifaCentavos: Int
+  divergenciaCentavos: Int
+  erro: String
+}
+
+input TimelineEventInput {
+  boletoId: ID!
+  seq: Int!
+  at: String!
+  stage: String!
+  level: String!
+  message: String!
+  attempt: Int
+  durationMs: Int
+  data: AWSJSON
+}
+
+type Query {
+  listBoletos(limit: Int, nextToken: String): BoletoPage! @aws_api_key @aws_iam
+  getBoleto(id: ID!): Boleto @aws_api_key @aws_iam
+  listEvents(boletoId: ID!, limit: Int, nextToken: String): EventPage! @aws_api_key @aws_iam
+}
+
+type Mutation {
+  publishBoleto(input: BoletoInput!): Boleto! @aws_iam
+  publishEvent(input: TimelineEventInput!): TimelineEvent! @aws_iam
+}
+
+type Subscription {
+  onBoletoChanged: Boleto @aws_subscribe(mutations: ["publishBoleto"]) @aws_api_key @aws_iam
+  onEvent(boletoId: ID): TimelineEvent @aws_subscribe(mutations: ["publishEvent"]) @aws_api_key @aws_iam
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
