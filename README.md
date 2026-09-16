@@ -1,13 +1,27 @@
-# Laboratório de AWS Lambda durable functions
+# Laboratórios de AWS Lambda durable functions
 
-Uma aplicação completa e funcional para entender **Lambda durable functions** na
-prática: um fluxo de cobrança em que a emissão do boleto, a espera pelo
-pagamento, a baixa, o extrato e a conciliação acontecem numa **única execução
-durável** — que fica suspensa por dias, sem consumir compute, até o webhook do
-banco chegar.
+Duas aplicações completas e funcionais para entender **Lambda durable
+functions** na prática, cada uma explorando um conjunto diferente de
+primitivas do recurso. Backend em Node.js, infraestrutura em OpenTofu,
+frontend em React com atualização em tempo real por AppSync. Cada uma sobe
+com dois comandos, em stacks AWS independentes.
 
-Backend em Node.js, infraestrutura em OpenTofu, frontend em React com
-atualização em tempo real por AppSync. Tudo sobe com dois comandos.
+| | O que é | Ensina |
+|---|---|---|
+| **[`app/`](app/)** — Mesa de conciliação | Emissão de boleto → pagamento → baixa → extrato → conciliação | `step`, `waitForCallback`, `wait`, `parallel` com steps, `AtMostOncePerRetry` |
+| **[`app-approval/`](app-approval/)** — Mesa de aprovações | Solicitação de compra → roteamento por valor → aprovação (com escalonamento) → pagamento | Roteamento condicional, `waitForCallback` encadeado, `parallel` com callbacks dentro, `CallbackSuccess` vs. `CallbackFailure` |
+
+O resto deste documento é o guia operacional do **primeiro** laboratório
+(boleto). O segundo tem tudo equivalente — como rodar, testar e o roteiro
+guiado — em **[`app-approval/README.md`](app-approval/README.md)**, que
+também explica em detalhe o que ele ensina de diferente deste.
+
+---
+
+Um fluxo de cobrança em que a emissão do boleto, a espera pelo pagamento, a
+baixa, o extrato e a conciliação acontecem numa **única execução durável** —
+que fica suspensa por dias, sem consumir compute, até o webhook do banco
+chegar.
 
 ```
   POST /boletos                                       webhook do banco
@@ -32,6 +46,45 @@ atualização em tempo real por AppSync. Tudo sobe com dois comandos.
                                 React + Vite
 ```
 
+---
+
+## Como é na prática
+
+**A execução suspensa.** O boleto foi emitido e a execução durável parou em
+`waitForCallback`, esperando o webhook do banco. Pode ficar assim por dias:
+nenhuma Lambda de pé, nenhuma concorrência reservada, nenhuma cobrança por
+tempo. A etapa 2 do pipeline mostra isso como "suspensa · custo zero".
+
+![Boleto aguardando pagamento, com a execução durável suspensa](assets/01-aguardando-pagamento.jpg)
+
+**O ciclo fechado.** Depois do pagamento, o fluxo retoma sozinho e passa por
+baixa, extrato (em ramo paralelo com a notificação do ERP) e conciliação. Os
+dados da cobrança saem preenchidos pelos steps, incluindo a divergência entre o
+que o extrato reporta e o que o contas a receber esperava.
+
+![Fluxo concluído com as cinco etapas e os dados da cobrança](assets/02-fluxo-concluido.jpg)
+
+**A linha do tempo.** Cada transição chega no navegador por subscription do
+AppSync — a tela nunca faz polling. Repare nos intervalos: entre o pagamento
+(20:40:30) e a baixa (20:40:37) há sete segundos em que a execução estava
+suspensa num `ctx.wait`, sem consumir compute.
+
+![Linha do tempo em tempo real, evento a evento](assets/03-linha-do-tempo.png)
+
+**O laboratório de caos.** O painel arma falhas no próximo step. Aqui o modo
+`falhar-baixa` derrubou a baixa duas vezes: o durable retentou sozinho, e os
+intervalos entre as tentativas (3 s, depois 4 s) são o backoff exponencial com
+jitter acontecendo de verdade.
+
+![Retry automático com backoff exponencial, três tentativas até a baixa passar](assets/04-retry-com-backoff.png)
+
+Os outros modos provam garantias diferentes — inclusive o caso em que a
+invocação morre **depois** do efeito colateral e o fluxo precisa conferir em vez
+de repetir. O roteiro completo está em
+[`app/README.md`](app/README.md#o-roteiro-do-laboratório).
+
+---
+
 > **Quer entender o *porquê* de cada decisão?** Este arquivo é o guia
 > operacional. A explicação técnica — semânticas de step, replay, determinismo,
 > as pegadinhas do recurso — está em **[`app/README.md`](app/README.md)**.
@@ -42,8 +95,9 @@ atualização em tempo real por AppSync. Tudo sobe com dois comandos.
 
 | Pasta | O que é |
 |---|---|
-| [`app/`](app/) | A aplicação: `backend/`, `frontend/` e `infra/` |
-| [`docs/reports/`](docs/reports/) | [Relatório de custos](docs/reports/custo-durable-functions.md) — quanto custa rodar 10 mil boletos/mês, medido na execução real |
+| [`app/`](app/) | Laboratório 1 — boleto: `backend/`, `frontend/` e `infra/` |
+| [`app-approval/`](app-approval/) | Laboratório 2 — aprovação: mesma estrutura, domínio e infra próprios |
+| [`docs/reports/`](docs/reports/) | Relatórios de custos, medidos direto na AWS: [boleto](docs/reports/custo-durable-functions.md) e [aprovação](docs/reports/custo-aprovacao.md) |
 
 `floci/`, se existir na sua cópia, é um clone de estudo do
 [Floci](https://github.com/floci-io/floci) e está no `.gitignore`, assim como o

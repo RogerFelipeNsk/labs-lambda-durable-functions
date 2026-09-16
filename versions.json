@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fixed Dependency and Runtime Versions for Lambda Durable Functions",
+  "repinRule": "As versoes fixadas neste arquivo so podem ser alteradas entre fases do projeto, nunca no meio de uma fase. Qualquer repin de versoes exige reexecucao obrigatoria de T-01.",
+  "durableSdk": {
+    "package": "@aws/durable-execution-sdk-js",
+    "version": "2.4.0",
+    "verificationCommand": "npm info @aws/durable-execution-sdk-js@2.4.0 version"
+  },
+  "awsSdkLambda": {
+    "package": "@aws-sdk/client-lambda",
+    "version": "3.1132.0",
+    "verificationCommand": "node -e \"console.log(JSON.parse(fs.readFileSync('app/backend/package-lock.json','utf8')).packages['node_modules/@aws-sdk/client-lambda'].version)\""
+  },
+  "awsCli": {
+    "version": "2.17.14",
+    "verificationCommand": "aws --version"
+  },
+  "lambdaRuntimeImage": {
+    "image": "public.ecr.aws/lambda/nodejs:24",
+    "manifestListDigest": "sha256:69b56f2f2e5ae89389274e0d9b4b0ba7c8276f79261a9bc34e320f78df2ceea3",
+    "platforms": {
+      "linux/arm64": {
+        "digest": "sha256:49f257581177ba7c5bbdc5123d4ee0293673e34b92b6766d15d6c6e7a2b97be4"
+      },
+      "linux/amd64": {
+        "digest": "sha256:7bc5216a9dd7a4a984a95ea86ff1b4e5ae6c1f190bc988f625902fa9b472e3a1"
+      }
+    },
+    "verificationCommand": "docker buildx imagetools inspect public.ecr.aws/lambda/nodejs:24"
+  },
+  "flociClone": {
+    "commit": "d45a4371224f94bc3fe84ab232c1e038cc062206",
+    "version": "2.0.1",
+    "java": {
+      "version": "25.0.4",
+      "vendor": "Eclipse Adoptium Temurin",
+      "verificationCommand": "java -version"
+    },
+    "quarkus": {
+      "version": "3.39.2",
+      "verificationCommand": "grep '<quarkus.platform.version>' floci/pom.xml"
+    },
+    "mavenWrapper": {
+      "version": "3.9.16",
+      "verificationCommand": "./floci/mvnw --version"
+    }
+  }
+}

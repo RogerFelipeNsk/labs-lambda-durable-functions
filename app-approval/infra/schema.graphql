@@ -1,0 +1,127 @@
+# Schema do canal de tempo real.
+#
+# Duas modalidades de autenticacao convivem aqui:
+#   API_KEY  o navegador, que so pode LER e ASSINAR
+#   AWS_IAM  as Lambdas, as unicas que podem PUBLICAR
+#
+# As mutations publish* usam um data source NONE (resolver local): elas NAO
+# escrevem nada. Quem persiste e o backend, direto no DynamoDB. A mutation
+# existe so para disparar a subscription.
+
+type Solicitacao @aws_api_key @aws_iam {
+  id: ID!
+  solicitante: String!
+  descricao: String
+  valorCentavos: Int!
+  status: String!
+  stage: String
+  createdAt: String!
+  updatedAt: String
+  executionArn: String
+  attempt: Int
+  chaos: String
+  chaosRestante: Int
+  precisaFinanceiro: Boolean
+  callbackIdGestor: String
+  callbackIdDiretoria: String
+  callbackIdFinanceiro: String
+  decisaoGestor: String
+  decisaoDiretoria: String
+  decisaoFinanceiro: String
+  aprovadorGestor: String
+  aprovadorDiretoria: String
+  aprovadorFinanceiro: String
+  comentarioGestor: String
+  comentarioDiretoria: String
+  comentarioFinanceiro: String
+  comprovante: String
+  executadoEm: String
+  erro: String
+}
+
+type TimelineEvent @aws_api_key @aws_iam {
+  solicitacaoId: ID!
+  seq: Int!
+  at: String!
+  stage: String!
+  level: String!
+  message: String!
+  attempt: Int
+  durationMs: Int
+  data: AWSJSON
+}
+
+type SolicitacaoPage @aws_api_key @aws_iam {
+  items: [Solicitacao!]!
+  nextToken: String
+}
+
+type EventPage @aws_api_key @aws_iam {
+  items: [TimelineEvent!]!
+  nextToken: String
+}
+
+input SolicitacaoInput {
+  id: ID!
+  solicitante: String!
+  descricao: String
+  valorCentavos: Int!
+  status: String!
+  stage: String
+  createdAt: String!
+  updatedAt: String
+  executionArn: String
+  attempt: Int
+  chaos: String
+  chaosRestante: Int
+  precisaFinanceiro: Boolean
+  callbackIdGestor: String
+  callbackIdDiretoria: String
+  callbackIdFinanceiro: String
+  decisaoGestor: String
+  decisaoDiretoria: String
+  decisaoFinanceiro: String
+  aprovadorGestor: String
+  aprovadorDiretoria: String
+  aprovadorFinanceiro: String
+  comentarioGestor: String
+  comentarioDiretoria: String
+  comentarioFinanceiro: String
+  comprovante: String
+  executadoEm: String
+  erro: String
+}
+
+input TimelineEventInput {
+  solicitacaoId: ID!
+  seq: Int!
+  at: String!
+  stage: String!
+  level: String!
+  message: String!
+  attempt: Int
+  durationMs: Int
+  data: AWSJSON
+}
+
+type Query {
+  listSolicitacoes(limit: Int, nextToken: String): SolicitacaoPage! @aws_api_key @aws_iam
+  getSolicitacao(id: ID!): Solicitacao @aws_api_key @aws_iam
+  listEvents(solicitacaoId: ID!, limit: Int, nextToken: String): EventPage! @aws_api_key @aws_iam
+}
+
+type Mutation {
+  publishSolicitacao(input: SolicitacaoInput!): Solicitacao! @aws_iam
+  publishEvent(input: TimelineEventInput!): TimelineEvent! @aws_iam
+}
+
+type Subscription {
+  onSolicitacaoChanged: Solicitacao @aws_subscribe(mutations: ["publishSolicitacao"]) @aws_api_key @aws_iam
+  onEvent(solicitacaoId: ID): TimelineEvent @aws_subscribe(mutations: ["publishEvent"]) @aws_api_key @aws_iam
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}

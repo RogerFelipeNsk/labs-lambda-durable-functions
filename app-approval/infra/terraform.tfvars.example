@@ -1,0 +1,28 @@
+# Copie para terraform.tfvars e ajuste o que quiser. Este arquivo (o .example)
+# entra no repositorio; terraform.tfvars fica de fora, de proposito.
+
+perfil_aws   = "meu-perfil"   # nome do perfil no seu ~/.aws/config
+regiao       = "us-east-2"
+nome_projeto = "lab-aprovacao"
+
+# nodejs22.x ou nodejs24.x
+runtime_lambda = "nodejs22.x"
+
+# Baixe para ver o escalonamento (gestor -> diretoria) acontecer em minutos
+# em vez de horas, numa demo ao vivo.
+prazo_gestor_minutos    = 1440 # 24h
+prazo_diretoria_minutos = 2880 # 48h
+prazo_financeiro_minutos = 1440 # 24h
+
+# Limites de roteamento por valor.
+limite_automatico_centavos = 30000   # R$ 300 — abaixo disso, aprovacao automatica
+limite_financeiro_centavos = 500000  # R$ 5.000 — acima disso, financeiro tambem decide
+
+# Pausa antes do pagamento, para dar tempo de acompanhar a timeline. Usa
+# ctx.wait (suspensao real), entao subir este valor nao aumenta o custo de
+# compute. 0 = sem pausa.
+ritmo_demo_segundos = 6
+
+# Libere a origem do seu Vite se nao for a porta padrao (5174, escolhida para
+# nao colidir com app/frontend, que usa 5173).
+origens_cors = ["http://localhost:5174", "http://127.0.0.1:5174"]

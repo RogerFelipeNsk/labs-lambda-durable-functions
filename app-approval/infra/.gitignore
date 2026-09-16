@@ -1,0 +1,8 @@
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+terraform.tfvars
+*.tfplan
+
+# .terraform.lock.hcl NAO entra aqui de proposito: ele fixa as versoes exatas
+# dos providers e precisa ser commitado para o lab ser reproduzivel.
